@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <style>
+        .container {
+            height: 610px;
+            width: 550px;
+            display: flex;
+            justify-content: center;
+            margin: auto;
+            align-items: center;
+            border-radius: 20px;
+
+
+        }
+
+        select {
+            width: 405px;
+            height: 20px;
+            margin-top: 5px;
+            margin-bottom: 10px;
+        }
+
+        input[type=text] {
+            width: 380px;
+            padding: 12px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            margin-top: 5px;
+            margin-bottom: 10px;
+        }
+
+        button {
+            background-color: #04AA6D;
+            color: white;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            height: 50px;
+            width: 100px;
+
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        span {
+            height: 70px;
+            width: 430px;
+            font-family: sans-serif;
+            font-size: 15px;
+            color: #585757;
+        }
+
+        textarea {
+            width: 380px;
+            padding: 12px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            margin-top: 3px;
+            margin-bottom: 10px;
+        }
+
+        h1 {
+            margin: 0;
+            margin-bottom: 10px;
+        }
+
+        form {
+            width: 500px;
+        }
+
+        #result {
+            height: 20px;
+
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <form action="" id="studentForm" autocomplete="off">
+            <h1>Student Registration</h1>
+            <span>Name</span>
+            <br>
+            <input type="text" id="name" autocomplete="on">
+            <br>
+            <span>Father's Name</span>
+            <br>
+            <input type="text" id="fatherName" autocomplete="on">
+            <br>
+            <span>Mother's Name</span>
+            <br>
+            <input type="text" id="motherName" autocomplete="on">
+            <br>
+            <span>Education</span>
+            <br>
+            <input type="text" id="education" autocomplete="on">
+            <br>
+            <span>Address</span>
+            <br>
+            <textarea name="" id="address" cols="21" rows="8" autocomplete="on"></textarea>
+            <br>
+            <span>Select Student For Update or Delete
+            </span>
+            <select id="studentSelect" onclick="select()">
+                <!-- Options will be dynamically added here -->
+            </select>
+            <br>
+
+            <button onclick="Create()">Create</button>
+            <button onclick="Read()">Read</button>
+            <button onclick="Update()">Update</button>
+            <button onclick="Delete()">Delete</button>
+
+        </form>
+    </div>
+    <div id="result"></div>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script>
+        function Create() {
+            const name = document.getElementById('name').value;
+            const fatherName = document.getElementById('fatherName').value;
+            const motherName = document.getElementById('motherName').value;
+            const education = document.getElementById('education').value;
+            const address = document.getElementById('address').value;
+
+            // Send a POST request to backend to create a new student
+            axios.post('http://localhost:3000/api/students', {
+                name,
+                fatherName,
+                motherName,
+                education,
+                address
+            })
+                .then(response => {
+                    const res = document.getElementById("result");
+                    res.innerHTML = 'Student details added successfully!';
+                    console.log("Student created successfully!");
+                })
+                .catch(error => {
+                    console.error('Error creating student:', error);
+                    const res = document.getElementById("result");
+                    res.innerHTML = 'Error creating student. Please try again.';
+                });
+
+        }
+        function select() {
+            
+            axios.get('http://localhost:3000/api/students')
+                .then(response => {
+                    const students = response.data;
+
+                    // Populate dropdown with student names
+                    const selectElement = document.getElementById('studentSelect');
+                    students.forEach(student => {
+                        const option = document.createElement('option');
+                        option.value = student._id; // Assuming student ID is stored in "_id" field
+                        option.textContent = student.name; // Assuming student name is stored in "name" field
+                        selectElement.appendChild(option);
+                    });
+                })
+                .catch(error => {
+                    console.error('Error fetching student data:', error);
+                });
+                
+        }
+
+        function Read() {
+            event.preventDefault();
+            // Function to read all students' details
+            axios.get('http://localhost:3000/api/students')
+                .then(response => {
+                    // Upon successful retrieval, open a new window or modal and display the details
+                    const students = response.data; // Assuming response.data contains an array of student objects
+                    const studentDetails = students.map(student => {
+                        return `<p>Name: ${student.name}</p>
+                                <p>Father's Name: ${student.fatherName}</p>
+                                <p>Mother's Name: ${student.motherName}</p>
+                                <p>Education: ${student.education}</p>
+                                <p>Address: ${student.address}</p>               
+                                <hr>`;
+
+                    }).join('');
+
+                    // Open a new window or modal and display the student details
+                    const newWindow = window.open('', 'Student Details', 'width=600,height=400');
+                    newWindow.document.body.innerHTML = studentDetails;
+
+                })
+                .catch(error => {
+                    console.error('Error reading students:', error);
+                    document.getElementById("result").innerHTML = 'Error reading students. Please try again.';
+                });
+
+        }
+
+        function Update() {
+            const selectElement = document.getElementById('studentSelect');
+            const selectedStudentId = selectElement.value;
+
+            const updatedStudent = {
+                name: document.getElementById('name').value,
+                fatherName: document.getElementById('fatherName').value,
+                motherName: document.getElementById('motherName').value,
+                education: document.getElementById('education').value,
+                address: document.getElementById('address').value
+            };
+
+            axios.put(`http://localhost:3000/api/students/${selectedStudentId}`, updatedStudent)
+                .then(response => {
+                    document.getElementById("result").innerHTML = 'Student details updated successfully!';
+                    populateDropdown(); // Refresh dropdown after update
+                })
+                .catch(error => {
+                    console.error('Error updating student:', error);
+                    document.getElementById("result").innerHTML = 'Error updating student. Please try again.';
+                });
+        }
+
+        function Delete() {
+            const selectElement = document.getElementById('studentSelect');
+            const selectedStudentId = selectElement.value;
+
+            // Make DELETE request to delete student
+            axios.delete(`http://localhost:3000/api/students/${selectedStudentId}`)
+                .then(response => {
+                    // Remove the option from the dropdown
+                    selectElement.remove(selectElement.selectedIndex);
+                    // Clear input fields after deletion
+                    clearInputFields();
+                    // Display success message
+                    document.getElementById("result").innerHTML = 'Student deleted successfully!';
+                })
+                .catch(error => {
+                    console.error('Error deleting student:', error);
+                    document.getElementById("result").innerHTML = 'Error deleting student. Please try again.';
+                });
+        }
+
+
+    </script>
+</body>
+
+</html>
